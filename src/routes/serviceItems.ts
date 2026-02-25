@@ -53,11 +53,26 @@ router.put('/:id', async (req, res) => {
 
 // Deletar serviço
 router.delete('/:id', async (req, res) => {
+    const id = Number(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+
     try {
-        await prisma.serviceItem.delete({ where: { id: Number(req.params.id) } });
+        const exists = await prisma.serviceItem.findUnique({ where: { id } });
+        if (!exists) return res.status(404).json({ error: 'Serviço não encontrado' });
+
+        // Remover comissões personalizadas deste item antes de deletá-lo
+        await prisma.barberItemCommission.deleteMany({
+            where: { itemId: id, itemType: 'service' }
+        });
+
+        await prisma.serviceItem.delete({ where: { id } });
         res.status(204).send();
     } catch (error) {
-        res.status(500).json({ error: 'Erro ao deletar serviço' });
+        console.error('Erro ao deletar serviço:', error);
+        res.status(500).json({
+            error: 'Erro ao deletar serviço',
+            details: error instanceof Error ? error.message : String(error)
+        });
     }
 });
 
