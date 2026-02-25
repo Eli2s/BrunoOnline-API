@@ -43,9 +43,11 @@ app.use('/api/cashbacks', cashbacksRouter);
 app.use('/api/message-templates', messageTemplatesRouter);
 app.use('/api/settings', settingsRouter);
 
-// Iniciar servidor
-app.listen(PORT, () => {
-    console.log(`🚀 API rodando em http://localhost:${PORT}`);
-});
+// Iniciar servidor apenas em ambiente local (não na Vercel)
+if (process.env.VERCEL !== '1') {
+    app.listen(PORT, () => {
+        console.log(`🚀 API rodando em http://localhost:${PORT}`);
+    });
+}
 
 export default app;
