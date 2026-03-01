@@ -1,0 +1,20 @@
+=== TESTE WHATSMIAU API ===
+BASE_URL: https://api.whatsmiau.dev
+INSTANCE: bruno-online
+API_KEY: 895f1ebb...
+
+--- 1. LISTAR INSTANCIAS ---
+STATUS: 200
+DATA: null
+
+--- 2. STATUS DA CONEXAO ---
+ERRO STATUS: 404
+ERRO DATA: "Cannot GET /evolution/instance/connectionState/bruno-online"
+
+--- 3. ENVIAR MENSAGEM PARA 5517991983701 ---
+ERRO STATUS: 500
+ERRO DATA: {
+  "error": "instance not found or not owned by user"
+}
+
+=== FIM DO TESTE ===

@@ -14,6 +14,8 @@ import barberCommissionsRouter from './routes/barberCommissions';
 import cashbacksRouter from './routes/cashbacks';
 import messageTemplatesRouter from './routes/messageTemplates';
 import settingsRouter from './routes/settings';
+import adminWhatsAppRouter from './routes/adminWhatsApp';
+import webhookRouter from './routes/webhook';
 
 dotenv.config();
 
@@ -42,6 +44,8 @@ app.use('/api/barber-commissions', barberCommissionsRouter);
 app.use('/api/cashbacks', cashbacksRouter);
 app.use('/api/message-templates', messageTemplatesRouter);
 app.use('/api/settings', settingsRouter);
+app.use('/api/admin/whatsapp', adminWhatsAppRouter);
+app.use('/api/webhook/whatsmiau', webhookRouter);
 
 // Iniciar servidor apenas em ambiente local (não na Vercel)
 if (process.env.VERCEL !== '1') {

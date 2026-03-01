@@ -171,3 +171,16 @@ model AppSettings {
 
   @@map("app_settings")
 }
+
+model WhatsmiauMessage {
+  id          Int      @id @default(autoincrement())
+  remoteJid   String   @map("remote_jid")
+  fromMe      Boolean  @default(false) @map("from_me")
+  messageId   String   @map("message_id")
+  content     String
+  pushName    String?  @map("push_name")
+  messageType String   @map("message_type")
+  timestamp   DateTime
+
+  @@map("whatsmiau_messages")
+}

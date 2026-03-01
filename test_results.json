@@ -1,0 +1,27 @@
+{
+  "list": {
+    "status": 200,
+    "data": null
+  },
+  "create": {
+    "status": 400,
+    "data": {
+      "error": "instance limit reached for your plan (0/0)"
+    },
+    "msg": "Request failed with status code 400"
+  },
+  "qr": {
+    "status": 500,
+    "data": {
+      "error": "invalid instance id"
+    },
+    "msg": "Request failed with status code 500"
+  },
+  "send": {
+    "status": 500,
+    "data": {
+      "error": "instance not found or not owned by user"
+    },
+    "msg": "Request failed with status code 500"
+  }
+}
