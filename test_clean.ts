@@ -2,9 +2,9 @@ import 'dotenv/config';
 import axios from 'axios';
 import * as fs from 'fs';
 
-const API_KEY = process.env.WHATSMIAU_API_KEY || '895f1ebb-762e-4c54-bf53-662ad5777c2b';
-const INSTANCE_NAME = process.env.WHATSMIAU_INSTANCE_NAME || 'bruno-online_92679e64';
-const BASE_URL = process.env.WHATSMIAU_BASE_URL || 'https://api.whatsmiau.dev';
+const API_KEY = '895f1ebb-762e-4c54-bf53-662ad5777c2b';
+const INSTANCE_NAME = 'bruno-online_92679e64';
+const BASE_URL = 'https://api.whatsmiau.dev';
 const TEST_NUMBER = '5517991983701';
 
 const api = axios.create({
@@ -13,34 +13,27 @@ const api = axios.create({
 });
 
 async function main() {
-    const results: any = { config: { BASE_URL, INSTANCE_NAME }, steps: {} };
+    const results: any = { steps: {} };
 
-    // 1. Conectar / pegar QR Code
+    // 1. Verificar status da conexao
     try {
-        const r = await api.get(`/evolution/instance/connect/${INSTANCE_NAME}`);
-        results.steps.connect = { ok: true, status: r.status, data: r.data };
+        const r = await api.get('/evolution/instances');
+        const inst = r.data?.find((i: any) => i.whatsmiau_instance_id === INSTANCE_NAME);
+        results.steps.status = { ok: true, instanceStatus: inst?.status || 'NOT_FOUND', data: inst };
     } catch (e: any) {
-        results.steps.connect = { ok: false, status: e?.response?.status, data: e?.response?.data };
+        results.steps.status = { ok: false, error: e?.response?.data };
     }
 
-    // 2. Verificar status
-    try {
-        const r = await api.get(`/evolution/instance/connectionState/${INSTANCE_NAME}`);
-        results.steps.connectionState = { ok: true, status: r.status, data: r.data };
-    } catch (e: any) {
-        results.steps.connectionState = { ok: false, status: e?.response?.status, data: e?.response?.data };
-    }
-
-    // 3. Tentar enviar mensagem
+    // 2. Enviar mensagem de teste
     try {
         const r = await api.post(`/message/sendText/${INSTANCE_NAME}`, {
             number: TEST_NUMBER,
-            options: { delay: 1200, presence: 'composing' },
-            textMessage: { text: 'Teste automatico - Bruno Online API funcionando!' },
+            text: 'Teste automatico - Bruno Online API funcionando!',
+            delay: 1200,
         });
-        results.steps.sendMessage = { ok: true, status: r.status, data: r.data };
+        results.steps.sendText = { ok: true, status: r.status, data: r.data };
     } catch (e: any) {
-        results.steps.sendMessage = { ok: false, status: e?.response?.status, data: e?.response?.data };
+        results.steps.sendText = { ok: false, status: e?.response?.status, data: e?.response?.data };
     }
 
     fs.writeFileSync('test_result.json', JSON.stringify(results, null, 2), 'utf-8');

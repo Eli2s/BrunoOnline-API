@@ -5,10 +5,12 @@ class WhatsMiauService {
     private api: AxiosInstance;
     private apiKey: string;
     private instanceName: string;
+    private instanceId: string; // ObjectID retornado por GET /evolution/instances
 
     private constructor() {
         this.apiKey = process.env.WHATSMIAU_API_KEY || '';
-        this.instanceName = process.env.WHATSMIAU_INSTANCE_NAME || 'bruno-online';
+        this.instanceName = process.env.WHATSMIAU_INSTANCE_NAME || 'bruno-online_92679e64';
+        this.instanceId = process.env.WHATSMIAU_INSTANCE_ID || '69a4b6e99cf22707df138d3d';
         const baseURL = process.env.WHATSMIAU_BASE_URL || 'https://api.whatsmiau.dev';
 
         if (!this.apiKey) {
@@ -54,10 +56,11 @@ class WhatsMiauService {
      */
     public async getQRCode() {
         try {
-            const response = await this.api.get(`/evolution/instance/connect/${this.instanceName}`);
+            // Conforme docs: connect usa ObjectID da instância
+            const response = await this.api.get(`/evolution/instance/connect/${this.instanceId}`);
             return response.data;
         } catch (error: any) {
-            console.error(`❌ Erro ao buscar QR Code da instância ${this.instanceName}:`, error?.response?.data || error.message);
+            console.error(`❌ Erro ao buscar QR Code da instância ${this.instanceId}:`, error?.response?.data || error.message);
             throw new Error('Erro ao buscar QR Code. Verifique se a instância existe e está desconectada.');
         }
     }
@@ -65,17 +68,13 @@ class WhatsMiauService {
     /**
      * Envia uma mensagem de texto simples. Suporta emojis.
      */
-    public async sendText(number: string, text: string, options?: { delay?: number; presence?: string }) {
+    public async sendText(number: string, text: string, options?: { delay?: number }) {
         try {
+            // Conforme docs: body é { number, text, delay } diretamente
             const response = await this.api.post(`/message/sendText/${this.instanceName}`, {
                 number,
-                options: {
-                    delay: options?.delay || 1200,
-                    presence: options?.presence || 'composing',
-                },
-                textMessage: {
-                    text,
-                },
+                text,
+                delay: options?.delay || 1200,
             });
             console.info(`✅ Mensagem de texto enviada para ${number}`);
             return response.data;
@@ -88,15 +87,14 @@ class WhatsMiauService {
     /**
      * Envia imagens ou vídeos via URL ou Base64.
      */
-    public async sendMedia(number: string, mediaUrl: string, caption?: string, mediaType: 'image' | 'video' = 'image') {
+    public async sendMedia(number: string, mediaUrl: string, caption?: string, mediaType: 'image' | 'video' | 'document' = 'image') {
         try {
+            // Conforme docs: body é { number, mediatype, media, caption } diretamente
             const response = await this.api.post(`/message/sendMedia/${this.instanceName}`, {
                 number,
-                mediaMessage: {
-                    mediatype: mediaType,
-                    caption: caption || '',
-                    media: mediaUrl,
-                },
+                mediatype: mediaType,
+                media: mediaUrl,
+                caption: caption || '',
             });
             console.info(`✅ Mídia enviada para ${number}`);
             return response.data;
@@ -111,11 +109,10 @@ class WhatsMiauService {
      */
     public async sendAudio(number: string, audioUrl: string) {
         try {
+            // Conforme docs: body é { number, audio } diretamente
             const response = await this.api.post(`/message/sendWhatsAppAudio/${this.instanceName}`, {
                 number,
-                audioMessage: {
-                    audio: audioUrl,
-                },
+                audio: audioUrl,
             });
             console.info(`✅ Áudio enviado para ${number}`);
             return response.data;
