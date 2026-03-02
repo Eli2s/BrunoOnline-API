@@ -14,28 +14,34 @@ const adminAuth = (req: any, res: any, next: any) => {
 router.use(adminAuth);
 
 router.get('/qrcode', async (req, res) => {
+    console.log('[WhatsApp] GET /qrcode');
     try {
         const qrCodeData = await whatsMiauService.getQRCode();
         res.json(qrCodeData);
     } catch (error: any) {
+        console.error('[WhatsApp] Erro em GET /qrcode:', error.message);
         res.status(500).json({ error: error.message || 'Erro ao obter QR Code' });
     }
 });
 
 router.post('/create-instance', async (req, res) => {
+    console.log('[WhatsApp] POST /create-instance');
     try {
         const instanceData = await whatsMiauService.createInstance();
         res.status(201).json(instanceData);
     } catch (error: any) {
+        console.error('[WhatsApp] Erro em POST /create-instance:', error.message);
         res.status(500).json({ error: error.message || 'Erro ao criar instância' });
     }
 });
 
 router.delete('/delete-instance', async (req, res) => {
+    console.log('[WhatsApp] DELETE /delete-instance');
     try {
         const result = await whatsMiauService.deleteInstance();
         res.json({ success: true, result });
     } catch (error: any) {
+        console.error('[WhatsApp] Erro em DELETE /delete-instance:', error.message);
         res.status(500).json({ success: false, error: error.message || 'Erro ao deletar instância' });
     }
 });

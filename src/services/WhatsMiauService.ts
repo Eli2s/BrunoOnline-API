@@ -55,13 +55,55 @@ class WhatsMiauService {
      * Recupera o QR Code (base64) para conectar uma instância criada.
      */
     public async getQRCode() {
+        console.log(`[WhatsApp] getQRCode INICIADO para instanceId=${this.instanceId}`);
         try {
-            // Conforme docs: connect usa ObjectID da instância
             const response = await this.api.get(`/evolution/instance/connect/${this.instanceId}`);
-            return response.data;
+            const data = response.data;
+            console.log('[WhatsApp] Resposta do connect:', JSON.stringify(data));
+
+            // Caso 1: Já conectado — WhatsMiau retorna { instance: "Instance already connected" }
+            if (typeof data?.instance === 'string' && data.instance.toLowerCase().includes('connected')) {
+                return { status: 'CONNECTED' };
+            }
+            // Caso 2: Conectado — formatos alternativos
+            if (data?.instance?.state === 'open' || data?.instance?.status === 'open' || data?.state === 'open' || data?.connected) {
+                return { status: 'CONNECTED' };
+            }
+            // Caso 3: QR Code retornado
+            if (data?.base64) {
+                return { status: 'DISCONNECTED', base64: data.base64 };
+            }
+            // Caso 4: Resposta não reconhecida — assume desconectado
+            console.warn('[WhatsApp] Resposta não reconhecida do connect, assumindo desconectado:', data);
+            return { status: 'DISCONNECTED' };
         } catch (error: any) {
-            console.error(`❌ Erro ao buscar QR Code da instância ${this.instanceId}:`, error?.response?.data || error.message);
-            throw new Error('Erro ao buscar QR Code. Verifique se a instância existe e está desconectada.');
+            const status = error?.response?.status;
+            const errorData = error?.response?.data;
+            console.warn(`[WhatsApp] Erro ao buscar QR Code. HTTP Status: ${status}. Data:`, errorData);
+
+            // Se for 404, a instância não existe. Criar nova automaticamente.
+            if (status === 404) {
+                console.info(`[WhatsApp] Instância não encontrada (404). Criando nova...`);
+                try {
+                    const newInstance = await this.createInstance();
+                    const qrBase64 = newInstance?.qrcode?.base64 || newInstance?.base64;
+                    if (qrBase64) {
+                        return { status: 'DISCONNECTED', base64: qrBase64 };
+                    }
+                    // Se não veio QR na criação, tenta connect novamente
+                    const retryResponse = await this.api.get(`/evolution/instance/connect/${this.instanceId}`);
+                    const retryData = retryResponse.data;
+                    if (retryData?.base64) {
+                        return { status: 'DISCONNECTED', base64: retryData.base64 };
+                    }
+                    return { status: 'DISCONNECTED' };
+                } catch (createErr: any) {
+                    console.error('[WhatsApp] Erro fatal ao recriar instância:', createErr?.response?.data || createErr.message);
+                    throw new Error('Não foi possível iniciar uma nova conexão de WhatsApp.');
+                }
+            }
+
+            throw new Error('Erro ao buscar QR Code. Verifique o status da instância.');
         }
     }
 
@@ -69,14 +111,24 @@ class WhatsMiauService {
      * Deleta a instância do WhatsMiau (desconecta e apaga registros da API).
      */
     public async deleteInstance() {
+        console.log(`[DEBUG] WhatsMiauService.deleteInstance INICIADO para ${this.instanceName}`);
         try {
-            // Requisição DELETE para remover a instância completamente. Pode ser também logout
             const response = await this.api.delete(`/evolution/instance/delete/${this.instanceName}`);
-            console.info(`✅ Instância ${this.instanceName} removida/deslogada com sucesso.`);
+            console.info(`✅ [DEBUG] Instância ${this.instanceName} removida/deslogada com sucesso. Resposta:`, response.data);
             return response.data;
         } catch (error: any) {
-            console.warn(`Aviso ao deletar instância ${this.instanceName}, já pode ter sido deletada:`, error?.response?.data || error.message);
-            return { success: true, message: 'Considerada deletada/deslogada' };
+            const errorData = error?.response?.data || error.message;
+            const status = error?.response?.status;
+            console.error(`❌ [DEBUG] Erro ao deletar instância ${this.instanceName}. Status: ${status}. Data:`, errorData);
+
+            // Se for 404, a instância já não existe, então consideramos sucesso no "delete"
+            if (status === 404) {
+                console.info(`ℹ️ [DEBUG] Instância ${this.instanceName} não encontrada (404). Sucesso implícito.`);
+                return { success: true, message: 'Instância já não existe' };
+            }
+
+            console.error(`❌ Erro ao deletar instância ${this.instanceName}:`, errorData);
+            throw new Error(`Erro ao deletar instância: ${JSON.stringify(errorData)}`);
         }
     }
 
