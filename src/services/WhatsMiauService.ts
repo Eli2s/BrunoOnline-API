@@ -66,6 +66,21 @@ class WhatsMiauService {
     }
 
     /**
+     * Deleta a instância do WhatsMiau (desconecta e apaga registros da API).
+     */
+    public async deleteInstance() {
+        try {
+            // Requisição DELETE para remover a instância completamente. Pode ser também logout
+            const response = await this.api.delete(`/evolution/instance/delete/${this.instanceName}`);
+            console.info(`✅ Instância ${this.instanceName} removida/deslogada com sucesso.`);
+            return response.data;
+        } catch (error: any) {
+            console.warn(`Aviso ao deletar instância ${this.instanceName}, já pode ter sido deletada:`, error?.response?.data || error.message);
+            return { success: true, message: 'Considerada deletada/deslogada' };
+        }
+    }
+
+    /**
      * Envia uma mensagem de texto simples. Suporta emojis.
      */
     public async sendText(number: string, text: string, options?: { delay?: number }) {

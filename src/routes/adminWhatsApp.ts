@@ -31,4 +31,27 @@ router.post('/create-instance', async (req, res) => {
     }
 });
 
+router.delete('/delete-instance', async (req, res) => {
+    try {
+        const result = await whatsMiauService.deleteInstance();
+        res.json({ success: true, result });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message || 'Erro ao deletar instância' });
+    }
+});
+
+router.post('/send-text', async (req, res) => {
+    try {
+        const { phone, message } = req.body;
+        if (!phone || !message) {
+            return res.status(400).json({ error: 'Telefone e mensagem são obrigatórios' });
+        }
+        // Usar serviço do WhatsMiau
+        const result = await whatsMiauService.sendText(phone, message);
+        res.json({ success: true, result });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message || 'Erro ao enviar mensagem' });
+    }
+});
+
 export default router;
