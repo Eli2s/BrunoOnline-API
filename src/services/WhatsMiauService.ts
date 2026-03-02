@@ -99,11 +99,13 @@ class WhatsMiauService {
                     return { status: 'DISCONNECTED' };
                 } catch (createErr: any) {
                     console.error('[WhatsApp] Erro fatal ao recriar instância:', createErr?.response?.data || createErr.message);
-                    throw new Error('Não foi possível iniciar uma nova conexão de WhatsApp.');
+                    throw new Error(`Não foi possível iniciar conexão. Erro na criação: ${createErr?.response?.status || 'desconhecido'}`);
                 }
             }
 
-            throw new Error('Erro ao buscar QR Code. Verifique o status da instância.');
+            // Se não for 404, expor o erro real para facilitar o debug em produção
+            const errorMessage = errorData?.response?.message || errorData?.message || error.message;
+            throw new Error(`Erro API WhatsMiau (${status}): ${errorMessage}`);
         }
     }
 
