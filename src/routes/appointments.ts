@@ -134,6 +134,42 @@ router.post('/:id/reschedule', async (req, res) => {
     }
 });
 
+// POST /appointments/swap - swap dateTime between two appointments
+router.post('/swap', async (req, res) => {
+    try {
+        const { appointmentIdA, appointmentIdB } = req.body;
+        if (!appointmentIdA || !appointmentIdB) {
+            return res.status(400).json({ message: 'appointmentIdA and appointmentIdB are required' });
+        }
+
+        const [a, b] = await Promise.all([
+            prisma.appointment.findUnique({ where: { id: Number(appointmentIdA) } }),
+            prisma.appointment.findUnique({ where: { id: Number(appointmentIdB) } }),
+        ]);
+
+        if (!a || !b) {
+            return res.status(404).json({ message: 'One or both appointments not found' });
+        }
+
+        const [updatedA, updatedB] = await prisma.$transaction([
+            prisma.appointment.update({
+                where: { id: a.id },
+                data: { dateTime: b.dateTime },
+                include: { barber: { select: { id: true, name: true, nickname: true } } },
+            }),
+            prisma.appointment.update({
+                where: { id: b.id },
+                data: { dateTime: a.dateTime },
+                include: { barber: { select: { id: true, name: true, nickname: true } } },
+            }),
+        ]);
+
+        res.json({ a: updatedA, b: updatedB });
+    } catch (err: any) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 // --- Blocked Periods ---
 
 // GET /appointments/blocked-periods
